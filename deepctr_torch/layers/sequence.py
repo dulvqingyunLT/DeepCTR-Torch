@@ -293,10 +293,50 @@ class DynamicGRU(nn.Module):
         elif gru_type == 'AUGRU':
             self.rnn = AUGRUCell(input_size, hidden_size, bias)
 
-    def forward(self, inputs, att_scores=None, hx=None):
+    def forward(self, inputs, att_scores=None, key_len=None, hx=None): #att_scores为了导onnx[B,T]-->[B, 1, T]
         if not isinstance(inputs, PackedSequence) or not isinstance(att_scores, PackedSequence):
-            raise NotImplementedError("DynamicGRU only supports packed input and att_scores")
 
+            return self.forward_unpacked(inputs, att_scores, key_len, hx)
+        else:
+            return self.forward_packed(inputs, att_scores, hx)
+
+    def forward_unpacked(self, input, att_scores=None, key_len=None, hx=None):
+            # batch_size = int(input.size(0))
+            # max_len = int(input.size(1))
+            batch_size, max_len,_ = input.size()
+
+            if not  isinstance(key_len, torch.Tensor):  #不同的batch key_len可能不一样，同一个batch一定一样
+                key_len = batch_size.repeat(max_len) # max_len
+                
+            
+            # batch_sizes = input.size(0).repeat(int(key_len[0]))  ##
+            
+            if hx is None:
+                hx = torch.zeros(batch_size, self.hidden_size,
+                                dtype=input.dtype, device=input.device)
+
+            outputs = torch.zeros(batch_size, max_len, self.hidden_size,
+                              dtype=input.dtype, device=input.device)
+
+            begin = 0
+            for i in range(key_len[0]): # 针对时间步作循环，这里就暗含了所有batch时间步一定要相同，不相同就只能截取最下的了。
+                new_hx = self.rnn(
+                    input[:,begin],
+                    hx,
+                    att_scores[...,begin])
+                outputs[:,begin] = new_hx
+                hx = new_hx
+                begin += 1
+            return outputs
+            
+            # 另一种方式固定time_step假如就是3，则可以改成如下写法
+            # new_hx_0 = self.rnn(input[:,0],hx,att_scores[...,0])
+            # new_hx_1 = self.rnn(input[:,1],new_hx_0,att_scores[...,1])
+            # new_hx_2 = self.rnn(input[:,2],new_hx_1,att_scores[...,2])
+
+            # return new_hx_2
+
+    def forward_packed(self, inputs, att_scores=None, hx=None):
         inputs, batch_sizes, sorted_indices, unsorted_indices = inputs
         att_scores, _, _, _ = att_scores
 

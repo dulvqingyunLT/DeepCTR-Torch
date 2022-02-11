@@ -19,7 +19,7 @@ def get_xy_fd(use_neg=False, hash_flag=False):
                          maxlen=4,
                          length_name="seq_length")]
 
-    behavior_feature_list = ["item_id", "cate_id"]
+    behavior_feature_list = ["item_id", "cate_id"] # 表示这两个特征是用户行为，将作为key_feat
     uid = np.array([0, 1, 2, 3])
     gender = np.array([0, 1, 0, 1])
     item_id = np.array([1, 2, 3, 2])  # 0 is mask value
@@ -29,7 +29,7 @@ def get_xy_fd(use_neg=False, hash_flag=False):
     hist_item_id = np.array([[1, 2, 3, 0], [1, 2, 3, 0], [1, 2, 0, 0], [1, 2, 0, 0]])
     hist_cate_id = np.array([[1, 1, 2, 0], [2, 1, 1, 0], [2, 1, 0, 0], [1, 2, 0, 0]])
 
-    behavior_length = np.array([3, 3, 2, 2])
+    behavior_length = np.array([3, 3, 2, 2])  ##这个是什么意思？？？？？
 
     feature_dict = {'user': uid, 'gender': gender, 'item_id': item_id, 'cate_id': cate_id,
                     'hist_item_id': hist_item_id, 'hist_cate_id': hist_cate_id,
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     x, y, feature_columns, behavior_feature_list = get_xy_fd(use_neg=True)
 
     device = 'cpu'
-    use_cuda = True
+    use_cuda = False
     if use_cuda and torch.cuda.is_available():
         print('cuda ready...')
         device = 'cuda:0'

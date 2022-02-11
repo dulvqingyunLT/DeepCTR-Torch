@@ -51,9 +51,14 @@ class LocalActivationUnit(nn.Module):
     def forward(self, query, user_behavior):
         # query ad            : size -> batch_size * 1 * embedding_size
         # user behavior       : size -> batch_size * time_seq_len * embedding_size
-        user_behavior_len = user_behavior.size(1)
+        batch,user_behavior_len, emb_size = user_behavior.size()
+        
 
         queries = query.expand(-1, user_behavior_len, -1)
+        # queries = query.repeat(1, user_behavior_len, 1)
+        # queries = query.expand_as(user_behavior)
+        # queries = query.repeat(1, user_behavior_len).reshape(-1,user_behavior_len, emb_size)
+
 
         attention_input = torch.cat([queries, user_behavior, queries - user_behavior, queries * user_behavior],
                                     dim=-1)  # as the source code, subtraction simulates verctors' difference

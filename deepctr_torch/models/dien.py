@@ -88,9 +88,12 @@ class DIEN(BaseModel):
     def forward(self, X):
         # [B, H] , [B, T, H], [B, T, H] , [B]
         query_emb, keys_emb, neg_keys_emb, keys_length = self._get_emb(X)
+
         # [b, T, H],  [1]  (b<H)
         masked_interest, aux_loss = self.interest_extractor(keys_emb, keys_length, neg_keys_emb)
+    
         self.add_auxiliary_loss(aux_loss, self.alpha)
+
         # [B, H]
         hist = self.interest_evolution(query_emb, masked_interest, keys_length)
         # [B, H2]
@@ -223,6 +226,7 @@ class InterestExtractor(nn.Module):
         interests, _ = pad_packed_sequence(packed_interests, batch_first=True, padding_value=0.0,
                                            total_length=max_length)
 
+
         if self.use_neg and neg_keys is not None:
             masked_neg_keys = torch.masked_select(neg_keys, mask.view(-1, 1, 1)).view(-1, max_length, dim)
             aux_loss = self._cal_auxiliary_loss(
@@ -232,6 +236,7 @@ class InterestExtractor(nn.Module):
                 masked_keys_length - 1)
 
         return interests, aux_loss
+
 
     def _cal_auxiliary_loss(self, states, click_seq, noclick_seq, keys_length):
         # keys_length >= 1
