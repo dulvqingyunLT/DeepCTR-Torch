@@ -62,7 +62,7 @@ class LocalActivationUnit(nn.Module):
 
         attention_input = torch.cat([queries, user_behavior, queries - user_behavior, queries * user_behavior],
                                     dim=-1)  # as the source code, subtraction simulates verctors' difference
-        attention_output = self.dnn(attention_input)
+        attention_output = self.dnn(attention_input)   #
 
         attention_score = self.dense(attention_output)  # [B, T, 1]
 

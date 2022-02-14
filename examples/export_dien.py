@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # test_loader = DataLoader(
     #         dataset=tensor_data, shuffle=False, batch_size=batch_size)
     tensor_data = torch.from_numpy(np.concatenate(x, axis=-1))
-    tensor_data = tensor_data[0:2]
+    # tensor_data = tensor_data[0:2]
 
     input_names = ['input']
     dynamic_axes = {

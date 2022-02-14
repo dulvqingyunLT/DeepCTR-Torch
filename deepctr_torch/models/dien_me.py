@@ -86,7 +86,7 @@ class DIEN_ME(BaseModel):
         self.to(device)
 
     def forward(self, X):
-        # [B, H] , [B, T, H], [B, T, H] , [B]
+        # [B, H] , [B, T, H], [B, T, H] , [B]  # 这里的T相当于最大time_step
         query_emb, keys_emb, neg_keys_emb, keys_length = self._get_emb(X)
         if self.training:
             # [b, T, H],  [1]  (b<H)
@@ -94,18 +94,14 @@ class DIEN_ME(BaseModel):
         
             self.add_auxiliary_loss(aux_loss, self.alpha)
         else:
-            masked_interest = self.interest_extractor(keys_emb, keys_length, neg_keys_emb)
+            masked_interest = self.interest_extractor(keys_emb, keys_length, neg_keys_emb) # 推理中neg_keys_emb不需要
         # [B, H]
         hist = self.interest_evolution(query_emb, masked_interest, keys_length)
-  
 
         deep_input_emb = self._get_deep_input_emb(X)
         deep_input_emb = concat_fun([hist, deep_input_emb])
         dense_value_list = get_dense_input(X, self.feature_index, self.dense_feature_columns)
-        # dnn_input = combined_dnn_input([deep_input_emb], dense_value_list)
-        import torch
-        dense_dnn_input = torch.cat(dense_value_list, dim=1)
-        dnn_input = torch.cat([deep_input_emb,dense_dnn_input], dim=1)
+        dnn_input = combined_dnn_input([deep_input_emb], dense_value_list)
         # [B, 1]
         output = self.linear(self.dnn(dnn_input))
         y_pred = self.out(output)
@@ -231,9 +227,7 @@ class InterestExtractor(nn.Module):
         # interests, _ = pad_packed_sequence(packed_interests, batch_first=True, padding_value=0.0,
         #                                    total_length=max_length)
 
-        # masked_keys = masked_keys.permute(1,0,2)
         interests, _ = self.gru(masked_keys)
-        # interests = interests.permute(1,0,2)
         if self.training:
             if self.use_neg and neg_keys is not None:
                 masked_neg_keys = torch.masked_select(neg_keys, mask.view(-1, 1, 1)).view(-1, max_length, dim)
@@ -344,7 +338,7 @@ class InterestEvolving(nn.Module):
         """
         Parameters
         ----------
-        query: 2D tensor, [B, H]
+        query: 2D tensor, [B, H] 
         keys: (masked_interests), 3D tensor, [b, T, H]
         keys_length: 1D tensor, [B]
 

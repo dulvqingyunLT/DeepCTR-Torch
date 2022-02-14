@@ -319,17 +319,17 @@ class DynamicGRU(nn.Module):
                               dtype=input.dtype, device=input.device)
 
             begin = 0
-            for i in range(key_len[0]): # 针对时间步作循环，这里就暗含了所有batch时间步一定要相同，不相同就只能截取最下的了。
+            for i in range(key_len[0]): # 针对时间步作循环，
                 new_hx = self.rnn(
                     input[:,begin],
                     hx,
-                    att_scores[...,begin])
+                    att_scores[...,begin]) #特别注意这里的写法。
                 outputs[:,begin] = new_hx
                 hx = new_hx
                 begin += 1
             return outputs
             
-            # 另一种方式固定time_step假如就是3，则可以改成如下写法
+            # 另一种方式固定time_step假如就是3，则可以改成如下写法，导出onnx时效果跟上面是一样的。
             # new_hx_0 = self.rnn(input[:,0],hx,att_scores[...,0])
             # new_hx_1 = self.rnn(input[:,1],new_hx_0,att_scores[...,1])
             # new_hx_2 = self.rnn(input[:,2],new_hx_1,att_scores[...,2])

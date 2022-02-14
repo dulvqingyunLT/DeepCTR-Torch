@@ -8,6 +8,31 @@ import argparse
 import json
 import os
 
+def get_amazon_data_prepared():
+    uids = np.load('./one_batch_data/uids.npy')
+    mids = np.load('./one_batch_data/mids.npy')
+    cats = np.load('./one_batch_data/cats.npy')
+    # mid_his = np.load('./one_batch_data/mid_his.npy')
+    # cat_his = np.load('./one_batch_data/cat_his.npy')
+    mid_his = np.random.randint(0,10000,(16,14), dtype=np.int32)
+    cat_his = np.random.randint(0,1000,(16,14), dtype=np.int32)
+    mid_mask = np.load('./one_batch_data/mid_mask.npy')
+    target = np.load('./one_batch_data/target.npy')
+    # lengths_x = np.load('./one_batch_data/lengths_x.npy')
+    lengths_x = np.array([14,12,11,10,8,8,7,6,6,6,5,5,5,5,5,5])
+    noclk_mid_his = np.load('./one_batch_data/noclk_mid_his.npy')
+    noclk_cat_his = np.load('./one_batch_data/noclk_cat_his.npy')
+
+    score = np.random.rand(16,1)
+
+    x = [uids,mids,cats,score,mid_his,lengths_x,cat_his]
+
+    for i in range(len(x)):
+        if len(x[i].shape) == 1:
+            x[i] = np.expand_dims(x[i], axis=1)
+
+    return np.concatenate(x, axis=-1)
+
 def extract_const_shape(nodes):
     """nodes: onnx_graphsurgeon nodes"""
     const_shapes = dict()
@@ -167,8 +192,10 @@ def main():
     input_tensors = dict()
     if len(input_data_paths) > 0 and args.input_shape is not None:
         for name in input_shapes.keys():
-            # input_data = np.fromfile(input_data_paths[name], dtype=np.float32)
-            input_data = np.load(input_data_paths[name])
+            # input_data = np.fromfile(input_data_paths[name], dtype=np.float32) # 原始代码
+            # input_data = np.load(input_data_paths[name]) # 用于Dien第一版的输入
+            input_data = get_amazon_data_prepared() #用于dien第二版的输入
+            input_data = input_data[0:1]
             input_data = input_data.reshape(input_shapes[name])
             input_tensors.update({name: input_data})
 
